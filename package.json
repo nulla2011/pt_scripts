@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "axios": "^0.26.0",
+    "cheerio": "^1.0.0-rc.10",
+    "node-notifier": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/node-notifier": "^8.0.2"
+  }
+}
