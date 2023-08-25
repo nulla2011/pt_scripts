@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import notifier from 'node-notifier';
-import * as fs from 'fs'
+import * as fs from 'fs';
 
 const TORRENTS_URL = new URL('https://u2.dmhy.org/torrents.php');
 const TEST_INTERVAL = 20 * 1000;
@@ -20,7 +20,7 @@ function isFreeisLimitedTime(el: cheerio.Element): [boolean, boolean] {
     result[1] = /将于 [^]* 终止/.test(freeIcon.next().text());
   } else if (otherIcon.length != 0) {
     let arrowdownIcon = $('img.pro_custom ~ img.arrowdown', row);
-    result[0] = arrowdownIcon.next().text() == "0.00X";
+    result[0] = arrowdownIcon.next().text() == '0.00X';
     result[1] = /将于 [^]* 终止/.test(arrowdownIcon.next().next().text());
   }
   return result;
@@ -35,46 +35,54 @@ function getTitle(el: cheerio.Element): string {
 }
 function getID(el: cheerio.Element): number {
   let titleEl = getTitleEl(el);
-  return parseInt(titleEl.attr('href')!.match(/id=(\d+)/)![1])
+  return parseInt(titleEl.attr('href')!.match(/id=(\d+)/)![1]);
 }
-function getPromotion(el: cheerio.Element) {
-
-}
+function getPromotion(el: cheerio.Element) {}
 interface ITorrentStatus {
   [key: number]: {
     title: string;
     isFree: boolean;
     isLimitedTime: boolean;
-  }
+  };
 }
 async function getBookmarkItem() {
   let pageNum = 0;
   let torrents: ITorrentStatus = {};
   while (true) {
     if (pageNum == 6) return torrents;
-    let page = await axios.get(TORRENTS_URL.href, {
-      params: {
-        inclbookmarked: 1,
-        page: pageNum
-      },
-      headers: { 'cookie': `nexusphp_u2=${cookie}` }
-    });
+    let page = await axios
+      .get(TORRENTS_URL.href, {
+        params: {
+          inclbookmarked: 1,
+          page: pageNum,
+        },
+        headers: { cookie: `nexusphp_u2=${cookie}` },
+      })
+      .catch((e) => (console.error(e.message), process.exit(1)));
     let $ = cheerio.load(page.data);
-    $('.torrents > tbody > tr').filter(function (i) { return $('.colhead', this).length == 0 }).each(function (i, el) {
-      torrents[getID(el)] = { title: getTitle(el), isFree: isFreeisLimitedTime(el)[0], isLimitedTime: isFreeisLimitedTime(el)[1] };
-    });
+    $('.torrents > tbody > tr')
+      .filter(function (i) {
+        return $('.colhead', this).length == 0;
+      })
+      .each(function (i, el) {
+        torrents[getID(el)] = {
+          title: getTitle(el),
+          isFree: isFreeisLimitedTime(el)[0],
+          isLimitedTime: isFreeisLimitedTime(el)[1],
+        };
+      });
     pageNum++;
   }
 }
 async function alertFreeItem(itemList: ITorrentStatus) {
   for (const key in itemList) {
     if (itemList[key].isFree && itemList[key].isLimitedTime) {
-      console.log(`FREE:  ${itemList[key].title}`)
+      console.log(`FREE:  ${itemList[key].title}`);
     }
   }
 }
 function diffItemList(newList: ITorrentStatus, oldList: ITorrentStatus): ITorrentStatus {
-  let result: ITorrentStatus = {}
+  let result: ITorrentStatus = {};
   for (const key in newList) {
     if (newList[key].isFree != oldList[key]?.isFree) {
       result[key] = newList[key];
@@ -85,7 +93,7 @@ function diffItemList(newList: ITorrentStatus, oldList: ITorrentStatus): ITorren
 async function main() {
   let itemList = await getBookmarkItem();
   if (Object.keys(itemList).every((i) => itemList[i as any].isFree)) {
-    console.log("ALL FREE!");
+    console.log('ALL FREE!');
   } else {
     alertFreeItem(itemList);
   }
@@ -94,7 +102,7 @@ async function main() {
     itemList = await getBookmarkItem();
     let diffList = diffItemList(itemList, oldItemList);
     if (Object.keys(itemList).every((i) => itemList[i as any].isFree)) {
-      console.log("ALL FREE!");
+      console.log('ALL FREE!');
     } else {
       alertFreeItem(diffList);
     }

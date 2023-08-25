@@ -1,2 +1,4 @@
 *.ck
+*.secr
 node_modules
+u2_monitorPromotion.js
